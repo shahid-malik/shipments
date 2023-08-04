@@ -1,18 +1,6 @@
 # -*- coding: utf-8 -*-
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
-from datetime import datetime, time
-from dateutil.relativedelta import relativedelta
-
-from markupsafe import escape, Markup
-from pytz import timezone, UTC
-from werkzeug.urls import url_encode
 
 from odoo import api, fields, models, _
-from odoo.osv import expression
-from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT, format_amount, format_date, formatLang, get_lang, groupby
-from odoo.tools.float_utils import float_compare, float_is_zero, float_round
-from odoo.exceptions import UserError, ValidationError
-
 from odoo.fields import Command
 
 
@@ -188,20 +176,20 @@ class Shipment_extend(models.Model):
                 order.amount_tax = amount_tax
                 order.amount_total = order.amount_untaxed + order.amount_tax + order.shipment_charges
 
-        @api.model
-        def default_get(self, fields):
-            defaults = super().default_get(fields)
-            if defaults.get('order_line'):
-                ids = []
-                for line in defaults.get('order_line'):
-                    for id in line[2]:
-                        new_line = self.env['purchase.order.line'].browse(id).copy()
-                        new_line.order_id = False
-                        ids.append(new_line.id)
-                defaults['order_line'] = [Command.set(ids)]
-            return defaults
+    @api.model
+    def default_get(self, fields):
+        defaults = super().default_get(fields)
+        if defaults.get('order_line'):
+            ids = []
+            for line in defaults.get('order_line'):
+                for id in line[2]:
+                    new_line = self.env['purchase.order.line'].browse(id).copy()
+                    new_line.order_id = False
+                    ids.append(new_line.id)
+            defaults['order_line'] = [Command.set(ids)]
+        return defaults
 
-        @api.onchange('is_shipment_charges')
-        def on_is_shipment_charges(self):
-            if not self.is_shipment_charges:
-                self.shipment_charges = 0
+    @api.onchange('is_shipment_charges')
+    def on_is_shipment_charges(self):
+        if not self.is_shipment_charges:
+            self.shipment_charges = 0
