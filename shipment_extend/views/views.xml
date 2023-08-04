@@ -1,0 +1,209 @@
+<odoo>
+    <data>
+
+        <record id="purchase_order_view_form_inherit" model="ir.ui.view">
+            <field name="name">purchase.order.form.inherit</field>
+            <field name="model">purchase.order</field>
+            <field name="inherit_id" ref="purchase.purchase_order_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                    <button type="object"
+                            name="action_open_shipment"
+                            class="oe_stat_button"
+                            icon="fa-truck">
+                        <field name="cs_shipment_count" widget="statinfo" string="Shipment"/>
+                    </button>
+                </xpath>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="shipment_extend_tree">
+            <field name="name">purchase.shipmentt</field>
+            <field name="model">purchase.shipment</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="purchase_id" optional="show"/>
+                    <field name="partner_id" optional="show"/>
+                    <field name="name" optional="show"/>
+                    <field name="shipment_tracking" optional="show"/>
+                    <field name="boxes" optional="show"/>
+                    <field name="date" optional="show"/>
+                    <field name="shipment_charges" optional="show"/>
+                    <field name="amount_total" optional="show"/>
+                </tree>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="shipment_extend_form">
+            <field name="name">purchase.shipmentt</field>
+            <field name="model">purchase.shipment</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                        <button name="action_create_invoice" string="Create Bill" type="object" class="oe_highlight"
+                                states="confirm"/>
+                        <button name="action_confirm" string="Confirm" type="object" class="oe_highlight" states="new"/>
+                        <field name="state" widget="statusbar"/>
+                    </header>
+
+                    <sheet>
+                        <div class="oe_button_box" name="button_box">
+                            <button type="object" name="action_view_invoice" class="oe_stat_button"
+                                    icon="fa-pencil-square-o" attrs="{'invisible':[ ('invoice_count', '=', 0)]}">
+                                <field name="invoice_count" widget="statinfo" string="Vendor Bills"/>
+                            </button>
+                        </div>
+
+                        <div class="oe_title">
+                            <h1 class="d-flex">
+                                <field name="name" readonly="1"/>
+                            </h1>
+                        </div>
+
+                        <group>
+                            <group>
+
+                                <field name="partner_id"/>
+                                <field name="date"/>
+                                <field name="boxes"/>
+                            </group>
+                            <group>
+                                <field name="is_shipment_charges" />
+                                <field name="shipment_charges" force_save="1"  attrs="{'invisible':[('is_shipment_charges','=',False)],'required':[('is_shipment_charges','=',True)]}"/>
+                                <field name="shipment_tracking" />
+                                <field name="purchase_id" invisible="1"/>
+                            </group>
+
+                        </group>
+
+                        <notebook>
+                            <page string="Products" name="products">
+                                <field name="tax_country_id" invisible="1"/>
+                                <field name="order_line" widget="section_and_note_one2many" mode="tree,kanban"
+                                       domain="[('id','in','purchase_id.order_line'), ('id','not in','order_line')]">
+                                    <tree string="Purchase Order Lines" editable="bottom" delete="true">
+                                        <field name="display_type" invisible="1"/>
+                                        <field name="currency_id" invisible="1"/>
+                                        <field name="state" invisible="1"/>
+                                        <field name="product_type" invisible="1"/>
+                                        <field name="product_uom" invisible="1" groups="!uom.group_uom"/>
+                                        <field name="product_uom_category_id" invisible="1"/>
+                                        <field name="invoice_lines" invisible="1"/>
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="product_id" force_save="1"/>
+                                        <field name="name" widget="section_and_note_text"/>
+                                        <field name="date_planned" optional="hide"
+                                               attrs="{'required': [('display_type', '=', False)]}" force_save="1"/>
+                                        <field name="analytic_distribution" widget="analytic_distribution"
+                                               optional="hide" groups="analytic.group_analytic_accounting"
+                                               options="{'product_field': 'product_id', 'business_domain': 'purchase_order'}"/>
+                                        <field name="product_qty"/>
+                                        <field name="qty_received_manual" invisible="1"/>
+                                        <field name="qty_received_method" invisible="1"/>
+                                        <field name="qty_received" string="Received"
+                                               attrs="{ 'readonly': [('qty_received_method', '!=', 'manual')]}"
+                                               optional="show"/>
+                                        <field name="qty_invoiced" string="Billed"
+
+                                               optional="show"/>
+                                        <field name="product_uom" string="UoM" groups="uom.group_uom"
+                                               attrs="{                                             'readonly': [('state', 'in', ('purchase', 'done', 'cancel'))],                                             'required': [('display_type', '=', False)]                                         }"
+                                               force_save="1" optional="show"/>
+                                        <field name="product_packaging_qty"
+                                               attrs="{'invisible': ['|', ('product_id', '=', False), ('product_packaging_id', '=', False)]}"
+                                               groups="product.group_stock_packaging" optional="show"/>
+                                        <field name="product_packaging_id"
+                                               attrs="{'invisible': [('product_id', '=', False)]}"
+                                               context="{'default_product_id': product_id, 'tree_view_ref':'product.product_packaging_tree_view', 'form_view_ref':'product.product_packaging_form_view'}"
+                                               groups="product.group_stock_packaging" optional="show"/>
+                                        <field name="price_unit" attrs="{'readonly': [('qty_invoiced', '!=', 0)]}"/>
+                                        <button name="action_purchase_history" type="object" icon="fa-history"
+                                                title="Purchase History" attrs="{'invisible': [('id', '=', False)]}"/>
+                                        <field name="taxes_id" widget="many2many_tags"
+                                               domain="[('type_tax_use','=','purchase'), ]"
+                                               context="{'default_type_tax_use': 'purchase', 'search_view_ref': 'account.account_tax_view_search'}"
+                                               options="{'no_create': True}" optional="show"/>
+                                        <field name="price_subtotal" widget="monetary"/>
+                                        <field name="price_total" invisible="1"/>
+                                        <field name="price_tax" invisible="1"/>
+                                    </tree>
+                                </field>
+                                <group>
+                                    <group class="oe_subtotal_footer oe_right">
+                                        <field name="amount_untaxed" sum="Untaxed amount"/>
+                                        <field name="amount_tax"/>
+                                        <field name="shipment_charges" readonly="1" force_save="1"/>
+                                        <div class="oe_subtotal_footer_separator oe_inline o_td_label">
+                                            <label for="amount_total"/>
+                                        </div>
+                                        <field name="amount_total" nolabel="1" sum="Total amount"
+                                               class="oe_subtotal_footer_separator"/>
+                                    </group>
+                                </group>
+                                <div class="clearfix"/>
+                            </page>
+
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+        <!-- explicit list view definition -->
+        <!--
+            <record model="ir.ui.view" id="shipment_extend.list">
+              <field name="name">shipment_extend list</field>
+              <field name="model">shipment_extend.shipment_extend</field>
+              <field name="arch" type="xml">
+                <tree>
+                  <field name="name"/>
+                  <field name="value"/>
+                  <field name="value2"/>
+                </tree>
+              </field>
+            </record>
+        -->
+
+        <!-- actions opening views on models -->
+
+        <record model="ir.actions.act_window" id="shipment_extend.action_window">
+            <field name="name">purchase.shipment</field>
+            <field name="res_model">purchase.shipment</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <!-- server action to the one above -->
+
+        <!--    <record model="ir.actions.server" id="shipment_extend.action_server">-->
+        <!--      <field name="name">shipment_extend server</field>-->
+        <!--      <field name="model_id" ref="model_shipment_extend_shipment_extend"/>-->
+        <!--      <field name="state">code</field>-->
+        <!--      <field name="code">-->
+        <!--        action = {-->
+        <!--          "type": "ir.actions.act_window",-->
+        <!--          "view_mode": "tree,form",-->
+        <!--          "res_model": model._name,-->
+        <!--        }-->
+        <!--      </field>-->
+        <!--    </record>-->
+
+
+        <!-- Top menu item -->
+        <!--
+            <menuitem name="shipment_extend" id="shipment_extend.menu_root"/>
+        -->
+        <!-- menu categories -->
+        <!--
+            <menuitem name="Menu 1" id="shipment_extend.menu_1" parent="shipment_extend.menu_root"/>
+            <menuitem name="Menu 2" id="shipment_extend.menu_2" parent="shipment_extend.menu_root"/>
+        -->
+        <!-- actions -->
+        <!--
+            <menuitem name="List" id="shipment_extend.menu_1_list" parent="shipment_extend.menu_1"
+                      action="shipment_extend.action_window"/>
+            <menuitem name="Server to list" id="shipment_extend" parent="shipment_extend.menu_2"
+                      action="shipment_extend.action_server"/>
+        -->
+    </data>
+</odoo>
